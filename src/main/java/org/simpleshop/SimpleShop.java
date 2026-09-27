@@ -23,13 +23,13 @@ extends JavaPlugin {
 
     public void onEnable() {
         if (!this.setupEconomy()) {
-            this.getLogger().severe("Nebyl nalezen Vault nebo zadny ekonomicky plugin (napr. Essentials).");
-            this.getLogger().severe("SimpleShop se vypina - naistaluj Vault + ekonomicky plugin a restartuj server.");
+            this.getLogger().severe("Vault or an economy plugin (e.g. Essentials) was not found.");
+            this.getLogger().severe("SimpleShop is disabling itself - install Vault + an economy plugin and restart the server.");
             this.getServer().getPluginManager().disablePlugin((Plugin)this);
             return;
         }
         this.getServer().getPluginManager().registerEvents((Listener)new ShopListener(this), (Plugin)this);
-        this.getLogger().info("SimpleShop byl uspesne nacten. Pouzita ekonomika: " + economy.getName());
+        this.getLogger().info("SimpleShop has been loaded successfully. Economy in use: " + economy.getName());
     }
 
     private boolean setupEconomy() {
@@ -48,4 +48,3 @@ extends JavaPlugin {
         return economy;
     }
 }
-
