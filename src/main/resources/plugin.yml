@@ -5,8 +5,8 @@ api-version: '1.20'
 author: Failxos
 softdepend: [Vault]
 description: >
-  Jednoduchy shop plugin ovladany cedulemi. Format cedule:
-  1. radek: [shop]
-  2. radek: cena
-  3. radek: B (majitel vykupuje) nebo S (majitel prodava)
-  4. radek: doplni si plugin sam podle itemu v truhle
+  Simple shop plugin controlled by signs. Sign format:
+  Line 1: [shop]
+  Line 2: price
+  Line 3: B (owner buys) or S (owner sells)
+  Line 4: filled in automatically by the plugin based on the item in the chest
