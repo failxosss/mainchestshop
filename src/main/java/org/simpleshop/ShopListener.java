@@ -47,12 +47,12 @@ import org.bukkit.util.io.BukkitObjectOutputStream;
 
 public class ShopListener implements Listener {
 
-    // Kolik "vecnych" sloupcu ma GUI k dispozici na radek (27/54 slotu = radky po 9,
-    // krajni sloupce 0 a 8 jsou vzdy ramecek).
+    // How many "item" columns the GUI has available per row (27/54 slots = rows of 9,
+    // the outer columns 0 and 8 are always the border).
     private static final int ITEMS_PER_ROW = 7;
-    // Maximalni pocet radku GUI (54 slotu = dvojita truhla). Min. 3 (jeden radek na zbozi).
+    // Maximum number of GUI rows (54 slots = double chest). Min. 3 (one row for goods).
     private static final int MAX_ROWS = 6;
-    // Maximalni pocet ruznych druhu zbozi, ktere shop pojme.
+    // Maximum number of distinct item types the shop can hold.
     private static final int MAX_ITEM_TYPES = (MAX_ROWS - 2) * ITEMS_PER_ROW;
 
     private final SimpleShop plugin;
@@ -84,20 +84,20 @@ public class ShopListener implements Listener {
                 throw new NumberFormatException();
             }
         } catch (NumberFormatException e) {
-            player.sendMessage(ChatColor.RED + "Druhy radek musi byt kladne cislo (cena), napr. 100");
+            player.sendMessage(ChatColor.RED + "The second line must be a positive number (price), e.g. 100");
             this.cancelSign(event);
             return;
         }
         String modeRaw = event.getLine(2) == null ? "" : event.getLine(2).trim();
         if (!modeRaw.equalsIgnoreCase("B") && !modeRaw.equalsIgnoreCase("S")) {
-            player.sendMessage(ChatColor.RED + "Treti radek musi byt 'B' (vykup od hracu) nebo 'S' (prodej hracum)");
+            player.sendMessage(ChatColor.RED + "The third line must be 'B' (buy from players) or 'S' (sell to players)");
             this.cancelSign(event);
             return;
         }
         boolean buyFromPlayer = modeRaw.equalsIgnoreCase("B");
         Block chestBlock = this.getAttachedContainer(event.getBlock());
         if (chestBlock == null || !(chestBlock.getState() instanceof Chest)) {
-            player.sendMessage(ChatColor.RED + "Cedule musi byt postavena na truhle nebo pripevnena na jeji predni stranu.");
+            player.sendMessage(ChatColor.RED + "The sign must be placed on a chest or attached to its front side.");
             this.cancelSign(event);
             return;
         }
@@ -105,20 +105,20 @@ public class ShopListener implements Listener {
 
         List<ItemStack> found = this.collectDistinctItems(chest.getInventory());
         if (found.isEmpty()) {
-            player.sendMessage(ChatColor.RED + "Nejdriv vloz do truhly alespon 1 kus itemu (klidne i vic ruznych druhu, treba i shulker s vecma), ktery chces "
-                    + (buyFromPlayer ? "vykupovat." : "prodavat.") + " Pak postav ceduli znovu.");
+            player.sendMessage(ChatColor.RED + "First put at least 1 item into the chest (you can also add several different types, even a shulker full of items) that you want to "
+                    + (buyFromPlayer ? "buy." : "sell.") + " Then place the sign again.");
             this.cancelSign(event);
             return;
         }
         if (found.size() > MAX_ITEM_TYPES) {
-            player.sendMessage(ChatColor.YELLOW + "Shop zvladne max " + MAX_ITEM_TYPES + " ruznych druhu zbozi, pouziva se prvnich " + MAX_ITEM_TYPES + ".");
+            player.sendMessage(ChatColor.YELLOW + "The shop can handle a maximum of " + MAX_ITEM_TYPES + " different item types, using the first " + MAX_ITEM_TYPES + ".");
             found = new ArrayList<>(found.subList(0, MAX_ITEM_TYPES));
         }
 
         String serialized = this.serializeItems(found);
         event.setLine(0, ChatColor.GREEN + "[Shop]");
         event.setLine(1, this.formatPrice(price));
-        event.setLine(2, (buyFromPlayer ? ChatColor.GOLD : ChatColor.AQUA) + (buyFromPlayer ? "VYKUP (B)" : "PRODEJ (S)"));
+        event.setLine(2, (buyFromPlayer ? ChatColor.GOLD : ChatColor.AQUA) + (buyFromPlayer ? "BUY (B)" : "SELL (S)"));
         event.setLine(3, this.formatShopLabel(found));
 
         double finalPrice = price;
@@ -135,13 +135,14 @@ public class ShopListener implements Listener {
                 sign.update(true, false);
             }
         });
-        player.sendMessage(ChatColor.GREEN + "Shop vytvoren: " + (buyFromPlayer ? "vykupujes " : "prodavas ")
-                + this.formatShopLabel(found) + " za " + this.formatPrice(price) + " / ks");
+        player.sendMessage(ChatColor.GREEN + "Shop created: " + (buyFromPlayer ? "buying " : "selling ")
+                + this.formatShopLabel(found) + " for " + this.formatPrice(price) + " / item");
     }
 
     /**
-     * Projde obsah truhly a vrati seznam odlisnych druhu itemu (podle isSimilar), kazdy jako
-     * jeden kus (mnozstvi 1). Poradi odpovida poradi, v jakem se dany druh v truhle poprve objevi.
+     * Goes through the chest contents and returns a list of distinct item types (by isSimilar),
+     * each as a single unit (amount 1). The order matches the order in which each type first
+     * appears in the chest.
      */
     private List<ItemStack> collectDistinctItems(Inventory chestInventory) {
         List<ItemStack> found = new ArrayList<>();
@@ -166,7 +167,7 @@ public class ShopListener implements Listener {
     }
 
     private void cancelSign(SignChangeEvent event) {
-        event.setLine(0, ChatColor.RED + "[Chyba]");
+        event.setLine(0, ChatColor.RED + "[Error]");
         event.setLine(1, "");
         event.setLine(2, "");
         event.setLine(3, "");
@@ -193,12 +194,12 @@ public class ShopListener implements Listener {
         String modeRaw = pdc.get(this.KEY_MODE, PersistentDataType.STRING);
         Double price = pdc.get(this.KEY_PRICE, PersistentDataType.DOUBLE);
         if (itemData == null || ownerUuidStr == null || modeRaw == null || price == null) {
-            player.sendMessage(ChatColor.RED + "Tato cedule je poskozena.");
+            player.sendMessage(ChatColor.RED + "This sign is corrupted.");
             return;
         }
         List<ItemStack> templates = this.deserializeItems(itemData);
         if (templates.isEmpty()) {
-            player.sendMessage(ChatColor.RED + "Tato cedule je poskozena.");
+            player.sendMessage(ChatColor.RED + "This sign is corrupted.");
             return;
         }
         UUID ownerId = UUID.fromString(ownerUuidStr);
@@ -207,7 +208,7 @@ public class ShopListener implements Listener {
 
         int rows = this.computeRows(templates.size());
         int[] slots = this.computeSlots(rows, templates.size());
-        String title = (buyFromPlayer ? ChatColor.GOLD : ChatColor.AQUA) + (buyFromPlayer ? "Vykup: " : "Prodej: ") + this.formatShopLabel(templates);
+        String title = (buyFromPlayer ? ChatColor.GOLD : ChatColor.AQUA) + (buyFromPlayer ? "Buy: " : "Sell: ") + this.formatShopLabel(templates);
         Inventory inv = Bukkit.createInventory(holder, rows * 9, title);
         holder.setInventory(inv);
         holder.setSlotMapping(slots);
@@ -217,8 +218,8 @@ public class ShopListener implements Listener {
     }
 
     /**
-     * Kolik radku (3-6, tj. 27-54 slotu) GUI potrebuje pro dany pocet druhu zbozi.
-     * Kazdy radek (krome hornich/dolnich ramecku) pojme az ITEMS_PER_ROW kusu zbozi.
+     * How many rows (3-6, i.e. 27-54 slots) the GUI needs for the given number of item types.
+     * Each row (except top/bottom borders) can hold up to ITEMS_PER_ROW items.
      */
     private int computeRows(int itemCount) {
         int interiorRowsNeeded = (int) Math.ceil(itemCount / (double) ITEMS_PER_ROW);
@@ -236,7 +237,7 @@ public class ShopListener implements Listener {
     }
 
     /**
-     * Spocita, do kterych slotu (mimo ramecek) se zbozi rozmisti, v poradi radek po radku.
+     * Calculates which slots (excluding the border) the items are placed into, row by row.
      */
     private int[] computeSlots(int rows, int itemCount) {
         List<Integer> slots = new ArrayList<>();
@@ -285,18 +286,18 @@ public class ShopListener implements Listener {
             }
 
             int stock = chestInv != null ? this.countMatching(chestInv, template) : -1;
-            lore.add(ChatColor.GRAY + "Cena: " + ChatColor.WHITE + this.formatPrice(holder.getPrice()) + " / ks");
+            lore.add(ChatColor.GRAY + "Price: " + ChatColor.WHITE + this.formatPrice(holder.getPrice()) + " / item");
             if (holder.isBuyFromPlayer()) {
-                lore.add(ChatColor.YELLOW + "Klikni pro prodej 1 ks");
-                lore.add(ChatColor.YELLOW + "Shift+klik pro prodej cele stacky");
+                lore.add(ChatColor.YELLOW + "Click to sell 1 item");
+                lore.add(ChatColor.YELLOW + "Shift+click to sell a full stack");
             } else {
                 if (stock >= 0) {
-                    lore.add(ChatColor.WHITE + "Sklad: " + stock + " ks");
+                    lore.add(ChatColor.WHITE + "Stock: " + stock + " items");
                 }
-                lore.add(ChatColor.YELLOW + "Klikni pro koupi 1 ks");
-                lore.add(ChatColor.YELLOW + "Shift+klik pro koupi cele stacky");
+                lore.add(ChatColor.YELLOW + "Click to buy 1 item");
+                lore.add(ChatColor.YELLOW + "Shift+click to buy a full stack");
                 if (this.isShulkerBox(template)) {
-                    lore.add(ChatColor.YELLOW + "Pravy klik pro nahled obsahu");
+                    lore.add(ChatColor.YELLOW + "Right-click to preview contents");
                 }
             }
             if (meta != null) {
@@ -332,7 +333,7 @@ public class ShopListener implements Listener {
         Player player = (Player) event.getWhoClicked();
         Block chestBlock = this.getAttachedContainer(holder.getSignBlock());
         if (chestBlock == null || !(chestBlock.getState() instanceof Chest)) {
-            player.sendMessage(ChatColor.RED + "Truhla tohoto shopu chybi nebo byla znicena.");
+            player.sendMessage(ChatColor.RED + "This shop's chest is missing or has been destroyed.");
             player.closeInventory();
             return;
         }
@@ -371,19 +372,19 @@ public class ShopListener implements Listener {
     private void openShulkerPreview(Player player, ItemStack shulkerItem) {
         ItemMeta meta = shulkerItem.getItemMeta();
         if (!(meta instanceof BlockStateMeta)) {
-            player.sendMessage(ChatColor.RED + "Tento item nejde nahlednout.");
+            player.sendMessage(ChatColor.RED + "This item cannot be previewed.");
             return;
         }
         BlockState state = ((BlockStateMeta) meta).getBlockState();
         if (!(state instanceof ShulkerBox)) {
-            player.sendMessage(ChatColor.RED + "Tento item nejde nahlednout.");
+            player.sendMessage(ChatColor.RED + "This item cannot be previewed.");
             return;
         }
         ShulkerBox shulkerBox = (ShulkerBox) state;
         Inventory shulkerInv = shulkerBox.getInventory();
         ShulkerPreviewHolder previewHolder = new ShulkerPreviewHolder();
         Inventory preview = Bukkit.createInventory(previewHolder, shulkerInv.getSize(),
-                ChatColor.DARK_PURPLE + "Obsah: " + this.formatItemName(shulkerItem));
+                ChatColor.DARK_PURPLE + "Contents: " + this.formatItemName(shulkerItem));
         previewHolder.setInventory(preview);
         ItemStack[] contents = shulkerInv.getContents();
         for (int i = 0; i < contents.length && i < preview.getSize(); i++) {
@@ -395,13 +396,13 @@ public class ShopListener implements Listener {
     private void handlePlayerBuys(Player player, OfflinePlayer owner, Economy econ, Inventory chestInv, ItemStack template, double price, int amount) {
         int available = this.countMatching(chestInv, template);
         if (available <= 0) {
-            player.sendMessage(ChatColor.RED + "Shop je vyprodany.");
+            player.sendMessage(ChatColor.RED + "The shop is sold out.");
             return;
         }
         amount = Math.min(amount, available);
         double total = price * (double) amount;
         if (econ.getBalance(player) < total) {
-            player.sendMessage(ChatColor.RED + "Nemas dostatek penez. Potrebujes " + this.formatPrice(total));
+            player.sendMessage(ChatColor.RED + "You don't have enough money. You need " + this.formatPrice(total));
             return;
         }
         econ.withdrawPlayer(player, total);
@@ -413,24 +414,24 @@ public class ShopListener implements Listener {
         for (ItemStack item : leftover.values()) {
             player.getWorld().dropItemNaturally(player.getLocation(), item);
         }
-        player.sendMessage(ChatColor.GREEN + "Koupil jsi " + amount + "x " + this.formatItemName(template) + " za " + this.formatPrice(total));
+        player.sendMessage(ChatColor.GREEN + "You bought " + amount + "x " + this.formatItemName(template) + " for " + this.formatPrice(total));
     }
 
     private void handlePlayerSells(Player player, OfflinePlayer owner, Economy econ, Inventory chestInv, ItemStack template, double price, int amount) {
         int playerHas = this.countMatching(player.getInventory(), template);
         if (playerHas <= 0) {
-            player.sendMessage(ChatColor.RED + "Nemas co prodat - potrebujes " + this.formatItemName(template));
+            player.sendMessage(ChatColor.RED + "You have nothing to sell - you need " + this.formatItemName(template));
             return;
         }
         amount = Math.min(amount, playerHas);
         double total = price * (double) amount;
         if (econ.getBalance(owner) < total) {
-            player.sendMessage(ChatColor.RED + "Majitel shopu nema dostatek penez na vykup.");
+            player.sendMessage(ChatColor.RED + "The shop owner doesn't have enough money to buy this.");
             return;
         }
         int space = this.freeSpaceForTemplate(chestInv, template);
         if (space <= 0) {
-            player.sendMessage(ChatColor.RED + "Truhla shopu je plna, nelze prodat.");
+            player.sendMessage(ChatColor.RED + "The shop's chest is full, cannot sell.");
             return;
         }
         amount = Math.min(amount, space);
@@ -441,7 +442,7 @@ public class ShopListener implements Listener {
         chestInv.addItem(addStack);
         econ.withdrawPlayer(owner, total);
         econ.depositPlayer(player, total);
-        player.sendMessage(ChatColor.GREEN + "Prodal jsi " + amount + "x " + this.formatItemName(template) + " za " + this.formatPrice(total));
+        player.sendMessage(ChatColor.GREEN + "You sold " + amount + "x " + this.formatItemName(template) + " for " + this.formatPrice(total));
     }
 
     @EventHandler
@@ -464,7 +465,7 @@ public class ShopListener implements Listener {
             return;
         }
         event.setCancelled(true);
-        player.sendMessage(ChatColor.RED + "Tuto cedulku shopu muze zbourat jen jeji majitel.");
+        player.sendMessage(ChatColor.RED + "Only the owner can break this shop sign.");
     }
 
     private Block getAttachedContainer(Block block) {
@@ -540,14 +541,14 @@ public class ShopListener implements Listener {
     }
 
     /**
-     * Text pouzity na 4. radku cedule a v nadpisu GUI - jmeno itemu, pokud je jen jeden druh,
-     * jinak pocet druhu zbozi.
+     * Text used on the 4th line of the sign and in the GUI title - the item's name if there is
+     * only one type, otherwise the number of item types.
      */
     private String formatShopLabel(List<ItemStack> templates) {
         if (templates.size() == 1) {
             return this.formatItemName(templates.get(0));
         }
-        return templates.size() + " druhu zbozi";
+        return templates.size() + " item types";
     }
 
     private String serializeItems(List<ItemStack> items) {
@@ -561,7 +562,7 @@ public class ShopListener implements Listener {
             dataOutput.close();
             return Base64.getEncoder().encodeToString(outputStream.toByteArray());
         } catch (IOException e) {
-            throw new RuntimeException("Nepodarilo se ulozit itemy do cedule", e);
+            throw new RuntimeException("Failed to save items to the sign", e);
         }
     }
 
@@ -577,7 +578,7 @@ public class ShopListener implements Listener {
             dataInput.close();
             return items;
         } catch (Exception e) {
-            // Zpetna kompatibilita se starymi cedulemi ulozenymi jeste jako jeden item (bez poctu na zacatku).
+            // Backward compatibility with old signs still stored as a single item (no count prefix).
             try {
                 ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64.getDecoder().decode(data));
                 BukkitObjectInputStream dataInput = new BukkitObjectInputStream(inputStream);
@@ -587,7 +588,7 @@ public class ShopListener implements Listener {
                 items.add(single);
                 return items;
             } catch (Exception legacyFailure) {
-                throw new RuntimeException("Nepodarilo se nacist itemy z cedule", legacyFailure);
+                throw new RuntimeException("Failed to load items from the sign", legacyFailure);
             }
         }
     }
