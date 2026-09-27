@@ -61,8 +61,8 @@ public class ShopHolder implements InventoryHolder {
     }
 
     /**
-     * Vrati index polozky (do templates), ktera nalezi danemu slotu v GUI, nebo null pokud
-     * na danem slotu zadna polozka shopu neni (napr. je to jen ramecek).
+     * Returns the index of the item (into templates) that belongs to the given GUI slot,
+     * or null if there is no shop item in that slot (e.g. it's just a border filler).
      */
     public Integer getTemplateIndexForSlot(int slot) {
         if (this.slotForIndex == null) {
